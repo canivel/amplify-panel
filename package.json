@@ -5,6 +5,7 @@
   "dependencies": {
     "aws-amplify": "^1.1.18",
     "aws-amplify-react": "^2.2.5",
+    "materialize-css": "^1.0.0-rc.2",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
     "react-scripts": "2.1.3"
