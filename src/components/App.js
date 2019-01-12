@@ -1,28 +1,101 @@
 import React, { Component } from "react";
 import { withAuthenticator } from "aws-amplify-react";
+import { API, graphqlOperation } from "aws-amplify";
+import { createNote, deleteNote, updateNote } from "../graphql/mutations";
+import { listNotes } from "../graphql/queries";
 export class App extends Component {
   state = {
-    notes: [
-      {
-        id: 1,
-        note: "My first note"
-      }
-    ]
+    id: "",
+    note: "",
+    notes: []
+  };
+
+  async componentDidMount() {
+    const result = await API.graphql(graphqlOperation(listNotes));
+    this.setState({ notes: result.data.listNotes.items });
+  }
+
+  handleChangeNote = event => {
+    return this.setState({ note: event.target.value });
+  };
+
+  hasExistingNote = () => {
+    const { notes, id } = this.state;
+    if (id) {
+      const isNote = notes.findIndex(note => note.id === id) > -1;
+      return isNote;
+    }
+    return false;
+  };
+
+  handleAddNote = async event => {
+    event.preventDefault();
+    const { note, notes } = this.state;
+    if (this.hasExistingNote()) {
+      this.handleUpdatenote();
+      console.log("note updated");
+    } else {
+      const input = {
+        note
+      };
+      const result = await API.graphql(graphqlOperation(createNote, { input }));
+      const newNote = result.data.createNote;
+      const updateNotes = [newNote, ...notes];
+      this.setState({ notes: updateNotes, note: "" });
+    }
+  };
+
+  handleUpdatenote = async () => {
+    const { notes, note, id } = this.state;
+    const input = {
+      id,
+      note
+    };
+    const result = await API.graphql(graphqlOperation(updateNote, { input }));
+    const updatedNote = result.data.updateNote;
+    const index = notes.findIndex(note => note.id === updatedNote.id);
+    const updatedNotes = [
+      ...notes.slice(0, index),
+      updatedNote,
+      ...notes.slice(index + 1)
+    ];
+    this.setState({ notes: updatedNotes, note: "", id: "" });
+  };
+
+  handleDeleteNote = async noteId => {
+    const { notes } = this.state;
+    const input = {
+      id: noteId
+    };
+    const result = await API.graphql(graphqlOperation(deleteNote, { input }));
+    const deletedNoteId = result.data.deleteNote.id;
+    const updateNotes = notes.filter(note => note.id !== deletedNoteId);
+    this.setState({ notes: updateNotes });
+  };
+
+  handleEditNote = ({ note, id }) => {
+    this.setState({ note, id });
   };
 
   render() {
     return (
       <div className="container">
         <div className="row">
-          <form className="col s12">
+          <form className="col s12" onSubmit={this.handleAddNote}>
             <div className="row">
               <div className="input-field col s6">
-                <input id="note" type="text" className="validate" />
+                <input
+                  id="note"
+                  type="text"
+                  className="validate"
+                  onChange={this.handleChangeNote}
+                  value={this.state.note}
+                />
                 <label htmlFor="note">Note</label>
               </div>
             </div>
             <button className="btn blue white-text" type="submit">
-              Create Note
+              {this.state.id ? "Update Note" : "Add Note"}
             </button>
           </form>
         </div>
@@ -32,10 +105,19 @@ export class App extends Component {
               <h4>Notes List</h4>
             </li>
             {this.state.notes.map(item => (
-              <li className="collection-item" key={item.id}>
+              <li
+                className="collection-item"
+                key={item.id}
+                onClick={() => this.handleEditNote(item)}
+              >
                 <div>
                   {item.note}
-                  <a href="#!" className="secondary-content">
+
+                  <a
+                    href="#!"
+                    onClick={() => this.handleDeleteNote(item.id)}
+                    className="secondary-content"
+                  >
                     <i className="material-icons">delete</i>
                   </a>
                 </div>
