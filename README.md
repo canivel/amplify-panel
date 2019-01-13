@@ -6,5 +6,8 @@ In the project directory, you can run:
 
 ### `npm start`
 
-amplify init
-ampify add api -> Graphql -> Congnito
+
+
+### amplify init
+
+### ampify add api -> Graphql -> Congnito
